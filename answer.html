@@ -1,0 +1,420 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>フットサル日程調整</title>
+
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f8f8f8;
+      margin: 0;
+      padding: 20px;
+      color: #222;
+    }
+
+    .container {
+      max-width: 760px;
+      margin: auto;
+      padding: 16px;
+      border: 1px solid #ddd;
+      border-radius: 16px;
+      background: #fff;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 16px;
+    }
+
+    h1 {
+      font-size: 18px;
+      margin: 0 0 8px;
+    }
+
+    .sub {
+      font-size: 12px;
+      color: #777;
+    }
+
+    .status {
+      background: #d9f5e3;
+      color: #168348;
+      padding: 4px 8px;
+      border-radius: 20px;
+      font-size: 11px;
+    }
+
+    h2 {
+      font-size: 14px;
+      margin-top: 24px;
+    }
+
+    #name {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 15px;
+    }
+
+    .date-card {
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      padding: 12px 8px;
+      margin-bottom: 12px;
+    }
+
+    .date-title {
+      font-weight: bold;
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+
+    .choices {
+      display: flex;
+      gap: 8px;
+    }
+
+    .choice {
+      flex: 1;
+      border: 1px solid #ddd;
+      background: #fff;
+      padding: 10px 0;
+      border-radius: 30px;
+      color: #888;
+      cursor: pointer;
+      font-size: 15px;
+    }
+
+    .choice.selected {
+      background: #e5e5e5;
+      color: #222;
+      border-color: #999;
+      font-weight: bold;
+    }
+
+    #saveButton {
+      width: 100%;
+      margin-top: 12px;
+      padding: 13px;
+      border: none;
+      border-radius: 8px;
+      background: #258b58;
+      color: white;
+      font-size: 15px;
+      cursor: pointer;
+    }
+
+    #saveButton:disabled {
+      background: #aaa;
+      cursor: not-allowed;
+    }
+
+    .summary {
+      margin: 20px 8px 8px;
+      font-size: 13px;
+      line-height: 1.8;
+    }
+
+    .note {
+      color: #888;
+      font-size: 11px;
+      margin-top: 20px;
+    }
+
+    .message {
+      margin-top: 12px;
+      font-size: 13px;
+    }
+  </style>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body>
+
+<div class="container">
+
+  <header>
+    <div>
+      <h1>フットサル日程調整</h1>
+      <div class="sub">11月の開催候補日を選んでください</div>
+    </div>
+    <span class="status">回答受付中</span>
+  </header>
+
+  <!-- 名前入力 -->
+  <h2>名前</h2>
+  <input
+    type="text"
+    id="name"
+    placeholder="名前を入力してください"
+    maxlength="30"
+  >
+
+  <!-- 開催候補日 -->
+  <h2>参加可能日を入力</h2>
+  <div id="dates">日程を読み込んでいます...</div>
+
+  <!-- 回答保存 -->
+  <button id="saveButton" onclick="saveAnswers()">
+    回答を保存
+  </button>
+
+  <div id="message" class="message"></div>
+
+  <!-- 回答確認 -->
+  <div class="summary">
+    <div style="color:#888;">回答イメージ</div>
+    <strong>
+      あなたの回答：
+      <span id="answer">未選択</span>
+    </strong>
+  </div>
+
+  <div class="note">
+    ※回答を保存すると、データベースに登録されます。
+  </div>
+
+</div>
+
+<script>
+
+// ===================================
+// ③ Supabase接続情報
+// ===================================
+
+const SUPABASE_URL = "https://kbfrqkuztmgoycnwhhna.supabase.co";
+const SUPABASE_KEY = "sb_publishable_a95rfXMoGGUFrylBXDirsQ_MpEms3EI";
+
+
+const supabaseClient = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
+
+console.log("Supabase Key設定:", !!supabaseClient.supabaseKey);
+
+// ===================================
+// 初期設定
+// ===================================
+
+const datesArea = document.getElementById("dates");
+const nameInput = document.getElementById("name");
+const answerArea = document.getElementById("answer");
+const messageArea = document.getElementById("message");
+const saveButton = document.getElementById("saveButton");
+
+let events = [];
+const answers = {};
+
+// ===================================
+// 開催候補日を取得
+// ===================================
+
+async function loadEvents() {
+
+  const { data, error } = await supabaseClient
+    .from("Events")
+    .select("*")
+    .order("event_date", { ascending: true });
+
+  if (error) {
+    console.error(error);
+    datesArea.textContent = "日程の取得に失敗しました。";
+    return;
+  }
+
+  events = data || [];
+  datesArea.innerHTML = "";
+
+  if (events.length === 0) {
+    datesArea.textContent = "開催候補日が登録されていません。";
+    return;
+  }
+
+  events.forEach(event => {
+
+    const card = document.createElement("div");
+    card.className = "date-card";
+
+    const dateText = new Date(
+      event.event_date + "T00:00:00"
+    ).toLocaleDateString("ja-JP", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      weekday: "short"
+    });
+
+    const title = document.createElement("div");
+    title.className = "date-title";
+    title.textContent = event.event_name || dateText;
+
+    const choices = document.createElement("div");
+    choices.className = "choices";
+
+    ["〇", "△", "×"].forEach(value => {
+
+      const button = document.createElement("button");
+      button.className = "choice";
+      button.textContent = value;
+      button.type = "button";
+
+      button.addEventListener("click", () => {
+
+        answers[event.id] = value;
+
+        choices.querySelectorAll(".choice").forEach(item => {
+          item.classList.remove("selected");
+        });
+
+        button.classList.add("selected");
+
+        updateAnswerDisplay();
+
+      });
+
+      choices.appendChild(button);
+
+    });
+
+    card.appendChild(title);
+    card.appendChild(choices);
+    datesArea.appendChild(card);
+
+  });
+
+}
+
+// ===================================
+// 回答イメージを更新
+// ===================================
+
+function updateAnswerDisplay() {
+
+  answerArea.textContent = events
+    .map(event => answers[event.id] || "未選択")
+    .join("・");
+
+}
+
+// ===================================
+// 回答を保存
+// ===================================
+
+async function saveAnswers() {
+
+  messageArea.textContent = "";
+
+  const name = nameInput.value.trim();
+
+  if (!name) {
+    alert("名前を入力してください");
+    nameInput.focus();
+    return;
+  }
+
+  if (events.length === 0) {
+    alert("開催候補日がありません");
+    return;
+  }
+
+  if (events.some(event => !answers[event.id])) {
+    alert("すべての日程に回答してください");
+    return;
+  }
+
+  saveButton.disabled = true;
+  saveButton.textContent = "保存中...";
+
+  try {
+
+    // 参加者を検索
+    const { data: existingUser, error: searchError } =
+      await supabaseClient
+        .from("UserName")
+        .select("id")
+        .eq("UserName", name)
+        .maybeSingle();
+
+    if (searchError) {
+      throw searchError;
+    }
+
+    let user = existingUser;
+
+    // 登録されていなければ新規登録
+    if (!user) {
+
+      const { data, error } = await supabaseClient
+        .from("UserName")
+        .insert([{ UserName: name }])
+        .select("id")
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      user = data;
+
+    }
+
+    // 回答データを作成
+    const records = events.map(event => ({
+      user_id: user.id,
+      event_id: event.id,
+      answer: answers[event.id]
+    }));
+
+    // 回答を保存・再回答なら上書き
+    const { error: saveError } = await supabaseClient
+      .from("Attendance")
+      .upsert(records, {
+        onConflict: "user_id,event_id"
+      });
+
+    if (saveError) {
+      throw saveError;
+    }
+
+    messageArea.textContent = "回答を保存しました！";
+
+    alert("回答を保存しました！");
+
+  } catch (error) {
+
+    console.error(error);
+
+    messageArea.textContent =
+      "保存に失敗しました。設定を確認してください。";
+
+    alert("保存に失敗しました。ブラウザのコンソールも確認してください。");
+
+  } finally {
+
+    saveButton.disabled = false;
+    saveButton.textContent = "回答を保存";
+
+  }
+
+}
+
+// ===================================
+// ページを開いたときに実行
+// ===================================
+
+loadEvents();
+
+</script>
+
+</body>
+</html>
