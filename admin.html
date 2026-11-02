@@ -122,6 +122,48 @@ const SUPABASE_KEY = "sb_publishable_a95rfXMoGGUFrylBXDirsQ_MpEms3EI";
 }
     
   });
+  
+async function loadEvents() {
+  const eventList = document.getElementById("eventList");
+
+  try {
+    const response = await fetch(
+      `${SUPABASE_URL}/rest/v1/Events?select=*&order=event_date.asc`,
+      {
+        headers: {
+          "apikey": SUPABASE_KEY
+        }
+      }
+    );
+
+    const events = await response.json();
+
+    if (!response.ok) {
+      throw new Error(events.message || "読み込みに失敗しました");
+    }
+
+    if (events.length === 0) {
+      eventList.textContent = "登録済みの日程はありません";
+      return;
+    }
+
+    eventList.innerHTML = events.map(event => `
+      <p>
+        開催日：${event.event_date}<br>
+        屋根：${event.roof_type}<br>
+        利用時間：${event.hours}時間<br>
+        1時間あたりのコート代：${event.hourly_cost}円
+      </p>
+      <hr>
+    `).join("");
+
+  } catch (error) {
+    eventList.textContent = "読み込みエラー：" + error.message;
+  }
+}
+
+loadEvents();
+  
 </script>
   
 </html>
