@@ -67,8 +67,56 @@
     <label>1時間あたりのコート代（円）</label>
     <input type="number" id="hourly_cost" min="0" placeholder="例：5000">
 
-    <button type="button">日程を登録</button>
+    <button type="button" id="registerButton">日程を登録</button>
   </div>
 
 </body>
+<script>
+const SUPABASE_URL = "https://kbfrqkuztmgoycnwhhna.supabase.co/rest/v1/";
+const SUPABASE_KEY = "sb_publishable_a95rfXMoGGUFrylBXDirsQ_MpEms3EI";
+  
+  document.getElementById("registerButton").addEventListener("click", async () => {
+    const event_date = document.getElementById("event_date").value;
+    const roof_type = document.getElementById("roof_type").value;
+    const hours = Number(document.getElementById("hours").value);
+    const hourly_cost = Number(document.getElementById("hourly_cost").value);
+
+    if (!event_date || !hours || !hourly_cost) {
+      alert("すべての項目を入力してください");
+      return;
+    }
+
+    try {
+  const response = await fetch(
+    `${SUPABASE_URL}/functions/v1/create-event`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_KEY
+      },
+      body: JSON.stringify({
+        event_date,
+        roof_type,
+        hours,
+        hourly_cost
+      })
+    }
+  );
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    alert("登録に失敗しました：" + (result.error || response.status));
+    return;
+  }
+
+  alert("日程を登録しました！");
+} catch (error) {
+  alert("通信エラーが発生しました：" + error.message);
+}
+    
+  });
+</script>
+  
 </html>
