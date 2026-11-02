@@ -4,6 +4,20 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>フットサル管理者画面</title>
+  
+  <div class="form-area" id="loginArea">
+  <h2>管理者ログイン</h2>
+
+  <label>メールアドレス</label>
+  <input type="email" id="loginEmail" placeholder="メールアドレス">
+
+  <label>パスワード</label>
+  <input type="password" id="loginPassword" placeholder="パスワード">
+
+  <button type="button" id="loginButton">ログイン</button>
+  <p id="loginMessage"></p>
+</div>
+  
   <style>
     body {
       font-family: sans-serif;
@@ -79,6 +93,42 @@
 <script>
 const SUPABASE_URL = "https://kbfrqkuztmgoycnwhhna.supabase.co";
 const SUPABASE_KEY = "sb_publishable_a95rfXMoGGUFrylBXDirsQ_MpEms3EI";
+
+  let accessToken = null;
+
+document.getElementById("loginButton").addEventListener("click", async () => {
+  const email = document.getElementById("loginEmail").value;
+  const password = document.getElementById("loginPassword").value;
+  const message = document.getElementById("loginMessage");
+
+  try {
+    const response = await fetch(
+      `${SUPABASE_URL}/auth/v1/token?grant_type=password`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": SUPABASE_KEY
+        },
+        body: JSON.stringify({ email, password })
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      message.textContent = "ログイン失敗：" + (result.msg || result.message || "入力内容を確認してください");
+      return;
+    }
+
+    accessToken = result.access_token;
+    message.textContent = "ログインしました！";
+    document.getElementById("loginArea").style.display = "none";
+
+  } catch (error) {
+    message.textContent = "通信エラー：" + error.message;
+  }
+});
   
   document.getElementById("registerButton").addEventListener("click", async () => {
     const event_date = document.getElementById("event_date").value;
@@ -97,9 +147,10 @@ const SUPABASE_KEY = "sb_publishable_a95rfXMoGGUFrylBXDirsQ_MpEms3EI";
     {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        "apikey": SUPABASE_KEY
-      },
+  "Content-Type": "application/json",
+  "apikey": SUPABASE_KEY,
+  "Authorization": `Bearer ${accessToken}`
+},
       body: JSON.stringify({
         event_date,
         roof_type,
