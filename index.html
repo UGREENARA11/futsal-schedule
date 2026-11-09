@@ -51,6 +51,33 @@
     <button onclick="alert('日程調整機能はこれから作成します！')">
       参加予定を確認
     </button>
+    <a href="https://yoyaku.fcjapan.jp/team/scripts/user/faci_schedule.php?faci_id=55" target="_blank">
+      コートの予約状況を確認する
+    </a>
   </div>
+  <script type="module">
+  import { createClient } from
+    'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+  const SUPABASE_URL = 'https://kbfrqkuztmgoycnwhhna.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_a95rfXMoGGUFrylBXDirsQ_MpEms3EI';
+
+  const supabase = createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+  );
+
+  // Supabase接続テスト
+  const { data, error } = await supabase
+    .from('UserName')
+    .select('id')
+    .limit(1);
+
+  if (error) {
+    console.error('接続エラー:', error);
+  } else {
+    console.log('Supabase接続成功！', data);
+  }
+</script>
 </body>
 </html>
