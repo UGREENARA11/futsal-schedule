@@ -46,6 +46,20 @@
     <p>開催日：未設定</p>
     <p>場所：未設定</p>
 
+<h2>参加者登録</h2>
+
+<div>
+  <label for="userName">名前：</label>
+  <input
+    type="text"
+    id="userName"
+    placeholder="例：山田太郎"
+  >
+  <button id="registerButton">新規登録</button>
+</div>
+
+<p id="registerMessage"></p>
+
     <h2>参加確認</h2>
     <p>参加できる日程を確認して、回答してください。</p>
     <button onclick="alert('日程調整機能はこれから作成します！')">
@@ -57,27 +71,74 @@
   </div>
   <script type="module">
   import { createClient } from
-    'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+  'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
-  const SUPABASE_URL = 'https://kbfrqkuztmgoycnwhhna.supabase.co';
-  const SUPABASE_KEY = 'sb_publishable_a95rfXMoGGUFrylBXDirsQ_MpEms3EI';
+const SUPABASE_URL = 'https://kbfrqkuztmgoycnwhhna.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_a95rfXMoGGUFrylBXDirsQ_MpEms3EI';
 
-  const supabase = createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY
-  );
+const supabase = createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
 
-  // Supabase接続テスト
-  const { data, error } = await supabase
-    .from('UserName')
-    .select('id')
-    .limit(1);
+document.getElementById('registerButton')
+  .addEventListener('click', async () => {
 
-  if (error) {
-    console.error('接続エラー:', error);
-  } else {
-    console.log('Supabase接続成功！', data);
-  }
+    const name = document.getElementById('userName')
+      .value.trim();
+
+    const message = document.getElementById('registerMessage');
+
+    if (!name) {
+      message.textContent = '名前を入力してください。';
+      return;
+    }
+
+    // 編集用のランダムなトークンを作成
+    const token = crypto.randomUUID();
+
+    // SHA-256でハッシュ化
+    const buffer = await crypto.subtle.digest(
+      'SHA-256',
+      new TextEncoder().encode(token)
+    );
+
+    const hash = Array.from(new Uint8Array(buffer))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+
+    // Supabaseに登録
+    const { data, error } = await supabase
+      .from('UserName')
+      .insert({
+        user_name: name,
+        edit_token_hash: hash
+      })
+      .select('id, user_name')
+      .single();
+
+    if (error) {
+      console.error(error);
+      message.textContent = '登録に失敗しました。';
+      return;
+    }
+
+    // この端末に編集用トークンを保存
+    localStorage.setItem(
+      'futsal_edit_token',
+      token
+    );
+
+    localStorage.setItem(
+      'futsal_user_id',
+      data.id
+    );
+
+    message.textContent =
+      name + ' さんの登録が完了しました！';
+
+    console.log('登録成功:', data);
+  });
 </script>
 </body>
 </html>
