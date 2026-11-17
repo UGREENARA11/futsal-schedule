@@ -261,6 +261,9 @@
     currentUser = user;
     currentPin = pin;
 
+    localStorage.setItem("futsal_user_name", user.user_name);
+    localStorage.setItem("futsal_user_pin", pin);
+
     authArea.classList.add("hidden");
     userArea.classList.remove("hidden");
     loggedInName.textContent = user.user_name;
@@ -491,12 +494,33 @@
     }
   });
 
-  // ページを開いたとき
-  async function initialize() {
-    await loadEvents();
+    // ページを開いたとき
+async function initialize() {
+  await loadEvents();
+
+  const savedName = localStorage.getItem("futsal_user_name");
+  const savedPin = localStorage.getItem("futsal_user_pin");
+
+  if (savedName && savedPin) {
+    try {
+      const result = await callFunction("authenticate", {
+        user_name: savedName,
+        pin: savedPin
+      });
+
+      await finishLogin(result.user, savedPin);
+
+    } catch (error) {
+      console.error("自動ログイン失敗:", error);
+
+      localStorage.removeItem("futsal_user_name");
+      localStorage.removeItem("futsal_user_pin");
+    }
   }
+}
 
   initialize();
+  
 </script>
 </body>
 </html>
