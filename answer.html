@@ -5,7 +5,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>フットサル日程調整</title>
-
   <style>
     body {
       font-family: sans-serif;
@@ -14,7 +13,6 @@
       padding: 20px;
       color: #222;
     }
-
     .container {
       max-width: 760px;
       margin: auto;
@@ -23,7 +21,6 @@
       border-radius: 16px;
       background: #fff;
     }
-
     header {
       display: flex;
       justify-content: space-between;
@@ -31,11 +28,9 @@
       border-bottom: 1px solid #eee;
       padding-bottom: 16px;
     }
-
     h1 { font-size: 18px; margin: 0 0 8px; }
     h2 { font-size: 14px; margin-top: 24px; }
     .sub { font-size: 12px; color: #777; }
-
     .status {
       background: #d9f5e3;
       color: #168348;
@@ -43,7 +38,6 @@
       border-radius: 20px;
       font-size: 11px;
     }
-
     input {
       width: 100%;
       box-sizing: border-box;
@@ -51,24 +45,20 @@
       border: 1px solid #ccc;
       border-radius: 8px;
       font-size: 15px;
-      margin-bottom: 10px;
+      margin: 8px 0 12px;
     }
-
     .date-card {
       border: 1px solid #ddd;
       border-radius: 10px;
       padding: 12px 8px;
       margin-bottom: 12px;
     }
-
     .date-title {
       font-weight: bold;
       font-size: 14px;
       margin-bottom: 12px;
     }
-
     .choices { display: flex; gap: 8px; }
-
     .choice {
       flex: 1;
       border: 1px solid #ddd;
@@ -79,14 +69,12 @@
       cursor: pointer;
       font-size: 15px;
     }
-
     .choice.selected {
       background: #e5e5e5;
       color: #222;
       border-color: #999;
       font-weight: bold;
     }
-
     button.main {
       width: 100%;
       margin-top: 12px;
@@ -98,12 +86,10 @@
       font-size: 15px;
       cursor: pointer;
     }
-
     button:disabled {
       background: #aaa;
       cursor: not-allowed;
     }
-
     button.sub-button {
       border: 0;
       background: none;
@@ -112,20 +98,17 @@
       cursor: pointer;
       padding: 10px 0;
     }
-
     .message { margin-top: 12px; font-size: 13px; }
     .summary {
       margin: 20px 8px 8px;
       font-size: 13px;
       line-height: 1.8;
     }
-
     .note {
       color: #888;
       font-size: 11px;
       margin-top: 20px;
     }
-
     .panel {
       margin-top: 20px;
       padding: 14px;
@@ -133,25 +116,12 @@
       border-radius: 10px;
       background: #fafafa;
     }
-
-    .token {
-      display: block;
-      padding: 12px;
-      margin: 10px 0;
-      background: #eee;
-      overflow-wrap: anywhere;
-      font-size: 13px;
-    }
-
     .hidden { display: none; }
   </style>
-
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-
 <body>
 <div class="container">
-
   <header>
     <div>
       <h1>フットサル日程調整</h1>
@@ -165,14 +135,12 @@
 
     <label for="name">名前</label>
     <input id="name" type="text" maxlength="30"
-      placeholder="名前を入力してください">
+      placeholder="名前を入力してください" autocomplete="name">
 
-    <div id="tokenArea" class="hidden">
-      <label for="token">編集コード</label>
-      <input id="token" type="text"
-        placeholder="編集コードを入力してください"
-        autocomplete="off">
-    </div>
+    <label for="pin">4桁の暗証番号</label>
+    <input id="pin" type="password" inputmode="numeric"
+      maxlength="4" pattern="[0-9]{4}"
+      placeholder="好きな4桁の数字を入力" autocomplete="off">
 
     <button id="authButton" class="main" type="button">
       新規登録
@@ -181,14 +149,6 @@
     <button id="switchAuth" class="sub-button" type="button">
       登録済みの方はこちら
     </button>
-    </div>
-    <div id="tokenResult" class="hidden">
-      <p><strong>あなたの編集コードです。</strong></p>
-      <p>別の端末でログインするときに必要です。必ず控えてください。</p>
-      <div id="issuedToken" class="token"></div>
-      <button id="copyToken" class="main" type="button">
-        編集コードをコピー
-      </button>
   </div>
 
   <div id="userArea" class="panel hidden">
@@ -215,13 +175,12 @@
   <div class="note">
     ※回答を保存すると、データベースに登録されます。
   </div>
-
 </div>
 
 <script>
   // Supabase接続情報
-  const SUPABASE_URL = "https://kbfrqkuztmgoycnwhhna.supabase.co";
-  const SUPABASE_KEY = "sb_publishable_a95rfXMoGGUFrylBXDirsQ_MpEms3EI";
+  const SUPABASE_URL = "隠す";
+  const SUPABASE_KEY = "隠す";
 
   const supabaseClient = window.supabase.createClient(
     SUPABASE_URL,
@@ -233,29 +192,23 @@
     SUPABASE_URL.replace(/\/$/, "") +
     "/functions/v1/participant-auth";
 
-  const STORAGE_KEY = "futsal_edit_token";
-
   const datesArea = document.getElementById("dates");
   const nameInput = document.getElementById("name");
+  const pinInput = document.getElementById("pin");
   const answerArea = document.getElementById("answer");
   const messageArea = document.getElementById("message");
   const saveButton = document.getElementById("saveButton");
-
   const authArea = document.getElementById("authArea");
   const authTitle = document.getElementById("authTitle");
   const authButton = document.getElementById("authButton");
   const switchAuth = document.getElementById("switchAuth");
-  const tokenArea = document.getElementById("tokenArea");
-  const tokenInput = document.getElementById("token");
-  const tokenResult = document.getElementById("tokenResult");
-  const issuedToken = document.getElementById("issuedToken");
   const userArea = document.getElementById("userArea");
   const loggedInName = document.getElementById("loggedInName");
 
   let events = [];
   const answers = {};
   let currentUser = null;
-  let currentToken = null;
+  let currentPin = null;
   let loginMode = "register";
 
   // Edge Functionを呼び出す
@@ -276,9 +229,7 @@
     const resultData = await result.json();
 
     if (!result.ok || !resultData.success) {
-      throw new Error(
-        resultData.error || "通信に失敗しました"
-      );
+      throw new Error(resultData.error || "通信に失敗しました");
     }
 
     return resultData;
@@ -287,129 +238,90 @@
   // 登録画面とログイン画面を切り替え
   function setLoginMode(mode) {
     loginMode = mode;
-    tokenResult.classList.add("hidden");
+    authTitle.textContent =
+      mode === "register" ? "新規登録" : "登録済みの方";
+    authButton.textContent =
+      mode === "register" ? "新規登録" : "ログイン";
+    switchAuth.textContent =
+      mode === "register"
+        ? "登録済みの方はこちら"
+        : "初めての方はこちら";
+
     nameInput.value = "";
-    tokenInput.value = "";
-
-    if (mode === "register") {
-      authTitle.textContent = "新規登録";
-      authButton.textContent = "新規登録";
-      tokenArea.classList.add("hidden");
-      switchAuth.textContent = "登録済みの方はこちら";
-    } else {
-      authTitle.textContent = "登録済みの方";
-      authButton.textContent = "ログイン";
-      tokenArea.classList.remove("hidden");
-      switchAuth.textContent = "初めての方はこちら";
-    }
-
+    pinInput.value = "";
     messageArea.textContent = "";
   }
 
   switchAuth.addEventListener("click", () => {
-    setLoginMode(
-      loginMode === "register" ? "login" : "register"
-    );
+    setLoginMode(loginMode === "register" ? "login" : "register");
   });
 
   // ログイン状態を画面に反映
-  async function finishLogin(user, token) {
+  async function finishLogin(user, pin) {
     currentUser = user;
-    currentToken = token;
-
-    localStorage.setItem(STORAGE_KEY, token);
+    currentPin = pin;
 
     authArea.classList.add("hidden");
     userArea.classList.remove("hidden");
     loggedInName.textContent = user.user_name;
-
     saveButton.disabled = false;
 
     await loadAnswers();
   }
 
-  // 初回登録・別端末ログイン
+  // 新規登録・ログイン
   authButton.addEventListener("click", async () => {
     messageArea.textContent = "";
 
     const name = nameInput.value.trim();
+    const pin = pinInput.value;
 
     if (!name) {
       alert("名前を入力してください");
       return;
     }
 
+    if (!/^\d{4}$/.test(pin)) {
+      alert("暗証番号は4桁の数字にしてください");
+      return;
+    }
+
     authButton.disabled = true;
 
     try {
-      if (loginMode === "register") {
-        const result = await callFunction("register", {
-          user_name: name
-        });
+      const action =
+        loginMode === "register" ? "register" : "authenticate";
 
-        currentToken = result.token;
-        localStorage.setItem(STORAGE_KEY, result.token);
+      const result = await callFunction(action, {
+        user_name: name,
+        pin: pin
+      });
 
-        issuedToken.textContent = result.token;
-        tokenResult.classList.remove("hidden");
+      await finishLogin(result.user, pin);
 
-        await finishLogin(result.user, result.token);
+      messageArea.textContent =
+        loginMode === "register"
+          ? "新規登録しました。"
+          : "ログインしました。";
 
-        messageArea.textContent =
-          "登録しました。編集コードを必ず控えてください。";
-
-      } else {
-        const token = tokenInput.value.trim();
-
-        if (!token) {
-          alert("編集コードを入力してください");
-          return;
-        }
-
-        const result = await callFunction("authenticate", {
-          token
-        });
-
-        if (result.user.user_name !== name) {
-          throw new Error("名前または編集コードが違います");
-        }
-
-        await finishLogin(result.user, token);
-        messageArea.textContent = "ログインしました。";
-      }
+      nameInput.value = "";
+      pinInput.value = "";
 
     } catch (error) {
       console.error(error);
       messageArea.textContent = error.message;
       alert(error.message);
-
     } finally {
       authButton.disabled = false;
     }
   });
 
-  // 編集コードをコピー
-  document.getElementById("copyToken").addEventListener(
-    "click",
-    async () => {
-      try {
-        await navigator.clipboard.writeText(
-          issuedToken.textContent
-        );
-        alert("編集コードをコピーしました");
-      } catch (error) {
-        alert("コピーできませんでした。コードを手動で控えてください。");
-      }
-    }
-  );
-
   // ログアウト
   document.getElementById("logoutButton").addEventListener(
     "click",
     () => {
-      localStorage.removeItem(STORAGE_KEY);
       currentUser = null;
-      currentToken = null;
+      currentPin = null;
 
       Object.keys(answers).forEach(key => delete answers[key]);
 
@@ -509,7 +421,8 @@
   // 本人の過去の回答を取得
   async function loadAnswers() {
     const result = await callFunction("get-answers", {
-      token: currentToken
+      user_name: currentUser.user_name,
+      pin: currentPin
     });
 
     Object.keys(answers).forEach(key => delete answers[key]);
@@ -533,7 +446,7 @@
   saveButton.addEventListener("click", async () => {
     messageArea.textContent = "";
 
-    if (!currentUser || !currentToken) {
+    if (!currentUser || !currentPin) {
       alert("ログインしてください");
       return;
     }
@@ -558,7 +471,8 @@
       }));
 
       await callFunction("save-answers", {
-        token: currentToken,
+        user_name: currentUser.user_name,
+        pin: currentPin,
         answers: records
       });
 
@@ -580,27 +494,6 @@
   // ページを開いたとき
   async function initialize() {
     await loadEvents();
-
-    const savedToken = localStorage.getItem(STORAGE_KEY);
-
-    if (!savedToken) {
-      return;
-    }
-
-    try {
-      const result = await callFunction("authenticate", {
-        token: savedToken
-      });
-
-      await finishLogin(result.user, savedToken);
-
-    } catch (error) {
-      console.error(error);
-      localStorage.removeItem(STORAGE_KEY);
-      messageArea.textContent =
-        "自動ログインできませんでした。編集コードでログインしてください。";
-      setLoginMode("login");
-    }
   }
 
   initialize();
